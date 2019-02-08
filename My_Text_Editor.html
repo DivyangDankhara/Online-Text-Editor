@@ -1,0 +1,174 @@
+<!--/*
+*	 FILE          : My_Text_Editor.html
+*    PROJECT       : Assignment #7 NotePad with Json And Jquery and AJEX
+*	 PROGRAMMER    : Divyangbhai Dankhara
+*    STUDENET NO.  : 8061566
+*	 FIRST VERSION : 2018-12-08
+*	 Description   : this file contain the layoyt for Text Editor service which is made with Ajex, Json, JQuesry, Html and Css
+                     this page will made the getall file names from MyFiles folder to server when this pafe successfully Loded 
+                     into the browser and other 2 request like load file and save file as user of this service click on the button
+*/-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Editor</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" media="screen" href="style.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+    
+
+        
+        /// --FUNCTION HADER COMMENT--
+        //	Function Name	:	function()
+        //	Parameters		:	NONE
+        //	Description		:   This function will call the getFileName Function when page succefullt load into to the browser
+        //	Return Value	:   return nothing;
+        $(document).ready(function() 
+        {
+            // here we call the getfileName function when page loads into the web browser
+            getFileName();
+
+        });
+        
+
+
+
+        /// --FUNCTION HADER COMMENT--
+        //	Function Name	:	loadFile()
+        //	Parameters		:	NONE
+        //	Description		:   this function will be executed when the used select to load file from the servet this funtion will first check that user has selected a 
+        //                      file form the select menu execute file contan and if not the n display an error that indicateing that user have to selct the file first
+        //	Return Value	:   return nothing;
+        function loadFile()
+        {
+            var select =  document.getElementById('Files');         //// here get the user selected file form the select list
+            if (select.value)           /// here we check that user have selected any of the item from the list and selectio  list is not empty
+            {
+                document.getElementById("Files").style = "";            // here we clear the style that we have applied when user click on load file buttom withour selecting any files
+                var filename =  $('#Files').find(":selected").text();       /// seve get the text of the item which user select from the select (in sort here get the file name which user wants to open)
+                document.getElementById("inputError").innerHTML = "";       // here we clear all the erroe that previously occured
+                document.getElementById("DisFileName").innerHTML = "File Name: "+filename;          /// here set that user has selected an file and we display that file name upper the text area
+                document.getElementById("saveFileName").value = filename;               /// here we set the save file name open with the same file name if user want just want edit the data on the same file
+                
+                var obj = { FName:filename};
+                var myJSON = JSON.stringify(obj);
+
+                $.ajax({url: "Server.php?load="+myJSON, success: function(result)         
+                {       /// this us ajex call which will ask serverto give it the selectes file content 
+                    var obj = jQuery.parseJSON(result);
+                    $("#textarea").val(obj.data);
+                }});
+            }
+            else
+            {
+                document.getElementById("inputError").innerHTML = "Please Select a file from list to select";                                       /// here write error to the page so user can see that error has been occured
+                document.getElementById("Files").style = "box-shadow: 0 0 5px rgb(255,0, 0);  border: 1px solid rgb(255, 0, 0); width: 150px;";         /// here glow tha drop down manu so used can idetify that they have to select a file to load that file into the text area
+                document.getElementById("DisFileName").innerHTML = "File Name: ";               /// here we clear the file name 
+                document.getElementById("saveFileName").value = "";                             /// here we clear the savefile name value when user click on the load button without selceting which file to load into the text area
+            }
+        }
+
+
+
+        /// --FUNCTION HADER COMMENT--
+        //	Function Name	:	saveFile()
+        //	Parameters		:	NONE
+        //	Description		:   this functio  used to save the file contain in the new file or the existing file name if user desire theu can make give the saveing file new name as well as they can overite the old file with new contant
+        //	Return Value	:   return nothing;
+        function saveFile()
+        {
+            /// here we save the file name which user has given to the save file and file content which user has been edited into the text area
+            var fileName =  document.getElementById('saveFileName').value;
+            var FileData =  document.getElementById('textarea').value;
+
+            if (fileName) 
+            {
+                document.getElementById("saveFileName").style = "";                                         /// here we clear the style which we added to the saveFileName Input box
+                document.getElementById("inputError").innerHTML = "";                                       /// here we clear the error which was occured in the before
+
+                //creating the jason from the with file name and its contant
+                var obj = { fileName:fileName,data:FileData};
+
+                var myJSON = JSON.stringify(obj);   /// use stringify function of javascript which used to convert string into jason object
+
+                /// send the json to the server to process saving request
+                $.ajax({type: "POST",url: "Server.php",data:"save="+myJSON, success: function(result)
+                {
+                    // if server successfully reciece request then it will send back replay
+                    document.getElementById("inputError").innerHTML = result;
+                }});
+
+                /// call the get file names function to uodate the list of the files
+                document.getElementById("DisFileName").innerHTML = "File Name: "+filename;
+                getFileName();
+            }
+            else
+            {
+                //// here we give user a save file name missing error so used can idetify what thay have to write file name to solve this error
+                document.getElementById("inputError").innerHTML = "Please enter the name of the file with you want save the contant";
+                document.getElementById("saveFileName").style = "box-shadow: 0 0 5px rgb(255,0, 0);  border: 1px solid rgb(255, 0, 0); width: 150px;";
+            }
+        }
+
+
+
+        /// --FUNCTION HADER COMMENT--
+        //	Function Name	:	getFileName()
+        //	Parameters		:	NONE
+        //	Description		:   this functio will call the sever to give all the file names from the MyFiles DIrectory.
+        //	Return Value	:   return nothing;
+        function getFileName()
+        {
+            $('#Files').find('option').remove().end().append('<option selected value=""></option>').val('');
+
+            /// here we send the small ajex idicating that page want the all the file names from the  server so server can send back all the file names with Json
+            $.ajax({url: "Server.php?get=filename", success: function(result)
+            {
+                /// here we successfully get the json wich contains all the file names from the sever
+                var obj = jQuery.parseJSON(result);         /// here we parse the Json into the object so we can go through each file name and display into the drop down menu
+                jQuery.each( obj, function( i, val ) 
+                {     
+                    // here loop go through all the file names and add it to the select drop down menu
+                    $("#Files").append('<option value="'+val+'">'+val+'</option>');
+                });
+            }});
+        }
+    </script>
+        
+</head>
+<body id="page">
+    <div class="background">
+        <div class="usableArea">
+            <center><h1>Divyang's Text Editor</h1></center>
+            <h2 id="DisFileName">File Name: </h2>
+            <textarea class="textarea" id="textarea"></textarea><br/>
+
+            <center>
+                <h2>Please select File to to load contain of file in text editor</h2>
+                <table>
+                    <tr>
+                        <td align="right"><label>Select File : </label></td>
+                        <td><select id="Files" title="select file from the list to Load the file into the Text Editor"></select></td>
+                        <td> <input type="button" class="button" value="Load File" id="loadFile" onclick="loadFile()"/></td>
+                    </tr><br/>
+                    <tr>
+                        <td align="right"><label>Save File Name : </label></td>
+                        <td><input type="text" id="saveFileName" class="textBox"/></td>&nbsp;  
+                        <td><input type="button" class="button" value="Save File" id="saveFile" onclick="saveFile()"/></td>
+                    </tr>
+                    <tr>
+                            <td colspan="2" align="center"><div id="inputError" style="color:red;"></div></td>
+                    </tr>
+                        
+                </table>
+              
+            </center><br/><br/>
+
+
+        </div>
+    </div>
+
+</body>
+</html>
